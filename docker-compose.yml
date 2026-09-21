@@ -1,0 +1,142 @@
+services:
+  # Creates /mnt/user/appdata/filtertrail and /mnt/user/appdata/authentik
+  filtertrail-init:
+    image: alpine:latest
+    container_name: filtertrail-init
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        mkdir -p /appdata/filtertrail/uploads
+        mkdir -p /appdata/filtertrail/backups
+        mkdir -p /appdata/filtertrail/backup/config
+        mkdir -p /appdata/filtertrail/logs
+        mkdir -p /appdata/authentik
+        echo "Created FilterTrail directory structure under /appdata"
+    volumes:
+      - /mnt/user/appdata:/appdata
+
+  filtertrail-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: filtertrail-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: mysql+pymysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      SECRET_KEY: ${SECRET_KEY}
+      UPLOADS_PATH: /app/uploads
+      BACKUP_PATH: /backups/filtertrail
+      ENCRYPTION_PASSPHRASE: ${BACKUP_ENCRYPTION_PASSPHRASE}
+      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
+      BACKUP_RETENTION_WEEKS: ${BACKUP_RETENTION_WEEKS}
+      BACKUP_RETENTION_MONTHS: ${BACKUP_RETENTION_MONTHS}
+      OIDC_ISSUER: ${OIDC_ISSUER}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
+    volumes:
+      - /mnt/user/appdata/filtertrail/uploads:/app/uploads
+      - /mnt/user/appdata/filtertrail/backups:/backups/filtertrail
+      - /mnt/user/appdata/filtertrail/backup/config:/backup/config:ro
+      - /mnt/user/appdata/filtertrail/logs:/app/logs
+    depends_on:
+      filtertrail-init:
+        condition: service_completed_successfully
+      filtertrail-backup-worker:
+        condition: service_started
+    ports:
+    - "8001:8000"
+
+  filtertrail-web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: filtertrail-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      AUTHENTIK_ISSUER: ${AUTHENTIK_ISSUER}
+      AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID}
+      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET}
+      API_BASE_URL: http://192.168.50.37:8001
+    volumes:
+      - /mnt/user/appdata/filtertrail/uploads:/app/public/uploads
+    depends_on:
+      filtertrail-init:
+        condition: service_completed_successfully
+    ports:
+      - "3001:3000"
+
+  authentik:
+    image: ghcr.io/goauthentik/server:2024.10.1
+    container_name: authentik
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-db
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASSWORD}
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+    volumes:
+      - /mnt/user/appdata/authentik:/media
+    depends_on:
+      filtertrail-init:
+        condition: service_completed_successfully
+      authentik-db:
+        condition: service_started
+      redis:
+        condition: service_started
+
+  authentik-db:
+    image: postgres:16-alpine
+    container_name: authentik-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: ${AUTHENTIK_DB_PASSWORD}
+      POSTGRES_DB: authentik
+    volumes:
+      - authentik-db:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: authentik-redis
+    restart: unless-stopped
+
+  filtertrail-backup-worker:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    container_name: filtertrail-backup-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: mysql+pymysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      UPLOADS_PATH: /app/uploads
+      BACKUP_DEST_LOCAL: /backups/filtertrail
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_PASSPHRASE}
+      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
+      BACKUP_RETENTION_WEEKS: ${BACKUP_RETENTION_WEEKS}
+      BACKUP_RETENTION_MONTHS: ${BACKUP_RETENTION_MONTHS}
+    volumes:
+      - /mnt/user/appdata/filtertrail/uploads:/app/uploads:ro
+      - /mnt/user/appdata/filtertrail/backups:/backups/filtertrail
+      - /mnt/user/appdata/filtertrail/backup/config:/backup/config
+      - /mnt/user/appdata/filtertrail/logs:/backup/logs
+    depends_on:
+      filtertrail-init:
+        condition: service_completed_successfully
+
+volumes:
+  authentik-db:
