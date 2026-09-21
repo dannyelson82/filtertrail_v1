@@ -214,5 +214,6 @@ export default async function EditToolPage({ params }) {
         </form>
       </main>
     </div>
+  </div>
   );
 }

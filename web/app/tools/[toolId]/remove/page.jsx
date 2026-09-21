@@ -170,6 +170,7 @@ export default async function RemoveToolPage({ params }) {
         </section>
       </main>
     </div>
+  </div>
   );
 }
 

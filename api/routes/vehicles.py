@@ -1,14 +1,31 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
 from models.vehicle import Vehicle as VehicleModel
+from models.vehicle_type import VehicleType as VehicleTypeModel
 from schemas.vehicle import Vehicle, VehicleCreate, VehicleRetire, VehicleUpdate
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
+
+
+def validate_vehicle_type_id(
+    vehicle_type_id: Optional[int],
+    db: Session,
+) -> None:
+    if vehicle_type_id is None:
+        return
+
+    vehicle_type = db.get(VehicleTypeModel, vehicle_type_id)
+
+    if vehicle_type is None or not vehicle_type.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Selected vehicle type is invalid or inactive.",
+        )
 
 
 @router.get("/", response_model=List[Vehicle])
@@ -33,6 +50,8 @@ def list_vehicles(
 
 @router.post("/", response_model=Vehicle, status_code=status.HTTP_201_CREATED)
 def create_vehicle(vehicle: VehicleCreate, db: Session = Depends(get_db)):
+    validate_vehicle_type_id(vehicle.vehicle_type_id, db)
+
     db_vehicle = VehicleModel(**vehicle.model_dump())
 
     try:
@@ -74,7 +93,12 @@ def update_vehicle(
     if db_vehicle is None:
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
-    for field, value in vehicle.model_dump(exclude_unset=True).items():
+    updates = vehicle.model_dump(exclude_unset=True)
+
+    if "vehicle_type_id" in updates:
+        validate_vehicle_type_id(updates["vehicle_type_id"], db)
+
+    for field, value in updates.items():
         setattr(db_vehicle, field, value)
 
     try:

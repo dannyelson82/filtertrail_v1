@@ -1,19 +1,28 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.database import engine, Base
+from core.database import Base, engine
 from models.borrower import Borrower
-from routes import health, vehicles, maintenance, tools, parts, loans, borrowers
+from models.vehicle_type import VehicleType
+from routes import (
+    borrowers,
+    health,
+    loans,
+    maintenance,
+    parts,
+    tools,
+    vehicle_types,
+    vehicles,
+)
 
-# Create tables
+# Create tables for imported SQLAlchemy models.
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Filter Trail API", version="0.1.0")
+app = FastAPI(title="Filter Trail API", version="0.1.1")
 
-# CORS (allow your web app origin)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten this later
+    allow_origins=["*"],  # Tighten this when authentication/origins are finalized.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,11 +30,13 @@ app.add_middleware(
 
 app.include_router(health.router, prefix="/api")
 app.include_router(vehicles.router, prefix="/api")
+app.include_router(vehicle_types.router, prefix="/api")
 app.include_router(maintenance.router, prefix="/api")
 app.include_router(tools.router, prefix="/api")
 app.include_router(parts.router, prefix="/api")
 app.include_router(loans.router, prefix="/api")
 app.include_router(borrowers.router, prefix="/api")
+
 
 @app.get("/")
 def root():

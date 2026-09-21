@@ -1,6 +1,16 @@
-from sqlalchemy import Boolean, Column, Date, Float, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    func,
+)
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy import func
 
 from core.database import Base
 
@@ -11,6 +21,14 @@ class Vehicle(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     type = Column(String(50), nullable=False)
+    vehicle_type_id = Column(
+        Integer,
+        ForeignKey("vehicle_types.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    managed_type = relationship("VehicleType", back_populates="vehicles")
+
     vin = Column(String(100), nullable=True)
     make = Column(String(100), nullable=True)
     model = Column(String(100), nullable=True)
