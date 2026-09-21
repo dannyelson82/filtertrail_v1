@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { Navbar } from "../../components/Navbar";
+import { EntityCard } from "../../components/EntityCard";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
 
@@ -15,6 +19,39 @@ async function fetchJson(path) {
   return response.json();
 }
 
+function getQuantity(part) {
+  return Number(part.quantity ?? part.quantity_on_hand ?? 0);
+}
+
+function getCostPerUnit(part) {
+  const cost = part.cost_per_unit ?? part.current_value;
+
+  if (cost === null || cost === undefined || cost === "") {
+    return null;
+  }
+
+  const value = Number(cost);
+  return Number.isFinite(value) ? value : null;
+}
+
+function getInventoryValue(part) {
+  const quantity = getQuantity(part);
+  const costPerUnit = getCostPerUnit(part);
+
+  return costPerUnit === null ? null : quantity * costPerUnit;
+}
+
+function formatCurrency(value) {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
+}
+
 export default async function PartsPage() {
   const [parts, tools, vehicles, loans] = await Promise.all([
     fetchJson("/api/parts/"),
@@ -28,175 +65,169 @@ export default async function PartsPage() {
   const totalVehicles = vehicles.length;
 
   const partsByCategory = parts.reduce((acc, part) => {
-    acc[part.category] = (acc[part.category] || 0) + 1;
+    const category = part.category || "Uncategorized";
+    acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {});
 
-  const categoryLabels = Object.entries(partsByCategory).map(([category, count]) => ({
-    category,
-    count,
-  }));
+  const categoryLabels = Object.entries(partsByCategory).map(
+    ([category, count]) => ({
+      category,
+      count,
+    })
+  );
 
   const totalInventoryValue = parts.reduce((sum, part) => {
-    const value = Number(part.current_value) || 0;
-    const qty = Number(part.quantity_on_hand) || 0;
-    return sum + value * qty;
+    return sum + (getInventoryValue(part) ?? 0);
   }, 0);
 
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
 
-      <main
-        style={{
-          padding: "1.5rem",
-          fontFamily: "system-ui, sans-serif",
-          maxWidth: 1200,
-          margin: "0 auto",
-        }}
-      >
-        <div
+      <div className="app-content">
+        <main
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: "1rem",
-            flexWrap: "wrap",
+            padding: "1.5rem",
+            fontFamily: "system-ui, sans-serif",
+            maxWidth: 1200,
+            margin: "0 auto",
           }}
         >
-          <div>
-            <h1 style={{ color: "#101828", margin: 0 }}>Parts Dashboard</h1>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "1rem",
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <h1 style={{ color: "#101828", margin: 0 }}>Parts Dashboard</h1>
 
-            <p style={{ color: "#667085", marginTop: "0.45rem" }}>
-              Overview of parts inventory, categories, and value.
-            </p>
+              <p style={{ color: "#667085", marginTop: "0.45rem" }}>
+                Overview of parts inventory, categories, and value.
+              </p>
+            </div>
+
+            <Link href="/parts/new" style={{ textDecoration: "none" }}>
+              <button type="button" style={createButtonStyle}>
+                Add Part
+              </button>
+            </Link>
           </div>
 
-          <Link href="/parts/create" style={{ textDecoration: "none" }}>
-            <button type="button" style={createButtonStyle}>
-              Add Part
-            </button>
-          </Link>
-        </div>
+          <section
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "1rem",
+              marginTop: "1.5rem",
+            }}
+          >
+            <StatCard label="Total Parts" value={totalParts} />
+            <StatCard label="Total Tools" value={totalTools} />
+            <StatCard label="Total Vehicles" value={totalVehicles} />
+            <StatCard
+              label="Total Inventory Value"
+              value={new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+                maximumFractionDigits: 0,
+              }).format(totalInventoryValue)}
+            />
+          </section>
 
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "1rem",
-            marginTop: "1.5rem",
-          }}
-        >
-          <StatCard label="Total Parts" value={totalParts} />
-          <StatCard label="Total Tools" value={totalTools} />
-          <StatCard label="Total Vehicles" value={totalVehicles} />
-          <StatCard
-            label="Total Inventory Value"
-            value={new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: "USD",
-              maximumFractionDigits: 0,
-            }).format(totalInventoryValue)}
-          />
-        </section>
+          {categoryLabels.length > 0 ? (
+            <section style={{ marginTop: "1.5rem" }}>
+              <h2 style={{ color: "#101828", margin: 0 }}>
+                Parts by Category
+              </h2>
 
-        {categoryLabels.length > 0 ? (
-          <section style={{ marginTop: "1.5rem" }}>
-            <h2 style={{ color: "#101828", margin: 0 }}>Parts by Category</h2>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                gap: "0.8rem",
-                marginTop: "0.8rem",
-              }}
-            >
-              {categoryLabels.map(({ category, count }) => (
-                <div
-                  key={category}
-                  style={{
-                    padding: "0.8rem",
-                    border: "1px solid #eaecf0",
-                    borderRadius: 7,
-                    background: "#fcfcfd",
-                  }}
-                >
-                  <div style={{ color: "#667085", fontSize: "0.8rem" }}>{category}</div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: "0.8rem",
+                  marginTop: "0.8rem",
+                }}
+              >
+                {categoryLabels.map(({ category, count }) => (
                   <div
+                    key={category}
                     style={{
-                      marginTop: "0.25rem",
-                      color: "#101828",
-                      fontWeight: 700,
+                      padding: "0.8rem",
+                      border: "1px solid #eaecf0",
+                      borderRadius: 7,
+                      background: "#fcfcfd",
                     }}
                   >
-                    {count} {count === 1 ? "part" : "parts"}
+                    <div style={{ color: "#667085", fontSize: "0.8rem" }}>
+                      {category}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: "0.25rem",
+                        color: "#101828",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {count} {count === 1 ? "part" : "parts"}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section style={{ marginTop: "1.5rem" }}>
+            <h2 style={{ color: "#101828", margin: 0 }}>All Parts</h2>
+
+            {parts.length === 0 ? (
+              <p style={{ color: "#667085", marginTop: "0.8rem" }}>
+                No parts have been added yet.
+              </p>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                  gap: "1rem",
+                  marginTop: "0.8rem",
+                }}
+              >
+                {parts.map((part) => {
+                  const quantity = getQuantity(part);
+                  const costPerUnit = getCostPerUnit(part);
+                  const inventoryValue = getInventoryValue(part);
+
+                  const details = [
+                    ["Category", part.category || "—"],
+                    ["Part Number", part.part_number || "—"],
+                    ["Quantity", quantity],
+                    ["Cost / Unit", formatCurrency(costPerUnit)],
+                    ["Inventory Value", formatCurrency(inventoryValue)],
+                    ["Location", part.location || "—"],
+                    ["Supplier", part.supplier || "—"],
+                  ];
+
+                  return (
+                    <EntityCard
+                      key={part.id}
+                      href={`/parts/${part.id}`}
+                      title={part.name}
+                      subtitle={part.category || "Uncategorized"}
+                      details={details}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </section>
-        ) : null}
-
-        <section style={{ marginTop: "1.5rem" }}>
-          <h2 style={{ color: "#101828", margin: 0 }}>All Parts</h2>
-
-          {parts.length === 0 ? (
-            <p style={{ color: "#667085", marginTop: "0.8rem" }}>
-              No parts have been added yet.
-            </p>
-          ) : (
-            <div style={{ overflowX: "auto", marginTop: "0.8rem" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-                <thead>
-                  <tr>
-                    {["Name", "Category", "Part Number", "Brand", "Quantity", "Location", "Condition", "Value"].map((heading) => (
-                      <th key={heading} style={headerCellStyle}>
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {parts.map((part) => (
-                    <tr key={part.id}>
-                      <td style={cellStyle}>
-                        <Link
-                          href={`/parts/${part.id}`}
-                          style={{
-                            color: "#175cd3",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {part.name}
-                        </Link>
-                      </td>
-                      <td style={cellStyle}>{part.category}</td>
-                      <td style={cellStyle}>{part.part_number || "—"}</td>
-                      <td style={cellStyle}>{part.brand || "—"}</td>
-                      <td style={cellStyle}>
-                        {part.quantity_on_hand ?? "—"}
-                      </td>
-                      <td style={cellStyle}>{part.location || "—"}</td>
-                      <td style={cellStyle}>{part.condition_status || "—"}</td>
-                      <td style={cellStyle}>
-                        {part.current_value != null
-                          ? new Intl.NumberFormat("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                            }).format(part.current_value)
-                          : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
@@ -212,6 +243,7 @@ function StatCard({ label, value }) {
       }}
     >
       <div style={{ color: "#667085", fontSize: "0.85rem" }}>{label}</div>
+
       <div
         style={{
           marginTop: "0.4rem",
@@ -234,20 +266,4 @@ const createButtonStyle = {
   background: "#175cd3",
   color: "#fff",
   fontWeight: 700,
-};
-
-const headerCellStyle = {
-  textAlign: "left",
-  padding: "0.7rem",
-  borderBottom: "2px solid #d0d5dd",
-  color: "#475467",
-  fontSize: "0.85rem",
-};
-
-const cellStyle = {
-  padding: "0.7rem",
-  borderBottom: "1px solid #eaecf0",
-  color: "#344054",
-  verticalAlign: "top",
-  fontSize: "0.9rem",
 };

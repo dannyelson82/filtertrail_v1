@@ -3,9 +3,8 @@ import { createVehicle } from "../../actions/vehicles";
 
 export default function NewVehiclePage() {
   return (
-    <div className="app-shell">
+    <div>
       <Navbar />
-      <div className="app-content">
       <main style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif" }}>
         <h1>Add Vehicle</h1>
 

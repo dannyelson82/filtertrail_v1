@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Navbar } from "../../components/Navbar";
+import { EntityCard } from "../../components/EntityCard";
 
 const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
 
@@ -57,38 +58,37 @@ export default async function BorrowersPage() {
             <Link href="/borrowers/new">Add your first borrower</Link>
           </section>
         ) : (
-          <div style={{ overflowX: "auto", marginTop: "1.5rem" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
-              <thead>
-                <tr>
-                  {["Name", "Phone", "Email", "Address", "Notes"].map((heading) => (
-                    <th key={heading} style={headerCellStyle}>{heading}</th>
-                  ))}
-                </tr>
-              </thead>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: "1rem",
+              marginTop: "1.5rem",
+            }}
+          >
+            {borrowers.map((borrower) => {
+              const details = [
+                ["Phone", borrower.phone || "—"],
+                ["Email", borrower.email ? (
+                  <a key="email" href={`mailto:${borrower.email}`} style={{ color: "#175cd3" }}>
+                    {borrower.email}
+                  </a>
+                ) : "—"],
+                ["Address", borrower.address || "—"],
+                ["Notes", borrower.notes || "—"],
+              ];
 
-              <tbody>
-                {borrowers.map((borrower) => (
-                  <tr key={borrower.id}>
-                    <td style={{ ...cellStyle, fontWeight: 700 }}>{borrower.name}</td>
-                    <td style={cellStyle}>{borrower.phone || "—"}</td>
-                    <td style={cellStyle}>
-                      {borrower.email ? (
-                        <a href={`mailto:${borrower.email}`} style={{ color: "#175cd3" }}>
-                          {borrower.email}
-                        </a>
-                      ) : "—"}
-                    </td>
-                    <td style={{ ...cellStyle, maxWidth: 240, whiteSpace: "pre-wrap" }}>
-                      {borrower.address || "—"}
-                    </td>
-                    <td style={{ ...cellStyle, maxWidth: 260, whiteSpace: "pre-wrap" }}>
-                      {borrower.notes || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              return (
+                <EntityCard
+                  key={borrower.id}
+                  href={`/borrowers/${borrower.id}`}
+                  title={borrower.name}
+                  subtitle="Borrower"
+                  details={details}
+                  imagePlaceholder={false}
+                />
+              );
+            })}
           </div>
         )}
       </main>
@@ -113,19 +113,4 @@ const emptyStateStyle = {
   padding: "2rem",
   textAlign: "center",
   color: "#667085",
-};
-
-const headerCellStyle = {
-  textAlign: "left",
-  padding: "0.7rem",
-  borderBottom: "2px solid #ddd",
-  color: "#444",
-  whiteSpace: "nowrap",
-};
-
-const cellStyle = {
-  padding: "0.7rem",
-  borderBottom: "1px solid #eee",
-  color: "#344054",
-  verticalAlign: "top",
 };

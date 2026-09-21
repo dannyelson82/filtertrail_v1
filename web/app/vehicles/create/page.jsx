@@ -87,7 +87,7 @@ export default function CreateVehiclePage() {
         throw new Error(`API error: ${response.status} - ${text}`);
       }
 
-      router.push("/vehicles");
+      window.location.href = "/vehicles";
     } catch (err) {
       setError(err.message || "Could not create vehicle.");
     }

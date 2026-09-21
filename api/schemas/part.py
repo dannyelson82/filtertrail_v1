@@ -7,16 +7,25 @@ from pydantic import BaseModel, Field
 class PartBase(BaseModel):
     name: str = Field(..., min_length=1)
     category: str
+
+    quantity: Optional[int] = 0
+    unit: Optional[str] = None
+    min_stock_level: Optional[int] = None
+    cost_per_unit: Optional[float] = None
+    supplier: Optional[str] = None
+
+    location: Optional[str] = None
     part_number: Optional[str] = None
     brand: Optional[str] = None
     model_compatibility: Optional[str] = None
+    condition_status: Optional[str] = "good"
+    notes: Optional[str] = None
+
     purchase_date: Optional[date] = None
     purchase_price: Optional[float] = None
     current_value: Optional[float] = None
+
     quantity_on_hand: Optional[int] = 0
-    location: Optional[str] = None
-    condition_status: Optional[str] = "good"
-    notes: Optional[str] = None
 
 
 class PartCreate(PartBase):
@@ -26,16 +35,25 @@ class PartCreate(PartBase):
 class PartUpdate(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
+
+    quantity: Optional[int] = None
+    unit: Optional[str] = None
+    min_stock_level: Optional[int] = None
+    cost_per_unit: Optional[float] = None
+    supplier: Optional[str] = None
+
+    location: Optional[str] = None
     part_number: Optional[str] = None
     brand: Optional[str] = None
     model_compatibility: Optional[str] = None
+    condition_status: Optional[str] = None
+    notes: Optional[str] = None
+
     purchase_date: Optional[date] = None
     purchase_price: Optional[float] = None
     current_value: Optional[float] = None
+
     quantity_on_hand: Optional[int] = None
-    location: Optional[str] = None
-    condition_status: Optional[str] = None
-    notes: Optional[str] = None
 
     is_retired: Optional[bool] = None
     retired_at: Optional[datetime] = None
@@ -49,6 +67,7 @@ class Part(PartBase):
     retired_at: Optional[datetime] = None
     retirement_reason: Optional[str] = None
     retirement_notes: Optional[str] = None
+    sale_price: Optional[float] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

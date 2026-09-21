@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { Navbar } from "../../components/Navbar";
+import { EntityCard } from "../../components/EntityCard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-import { Navbar } from "../../components/Navbar";
-
 
 const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
 
@@ -149,51 +149,55 @@ export default async function VehiclesPage() {
               No vehicles have been added yet.
             </p>
           ) : (
-            <div style={{ overflowX: "auto", marginTop: "0.8rem" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-                <thead>
-                  <tr>
-                    {["Name", "Type", "Make", "Model", "Year", "VIN", "Value", "Status"].map((heading) => (
-                      <th key={heading} style={headerCellStyle}>
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                gap: "1rem",
+                marginTop: "0.8rem",
+              }}
+            >
+              {vehicles.map((v) => {
+                const details = [
+                  ["Type", v.vehicle_type || "—"],
+                  ["Make", v.make || "—"],
+                  ["Model", v.model || "—"],
+                  ["Year", v.year ?? "—"],
+                  ["VIN", v.vin || "—"],
+                  ["Value", v.current_value != null
+                    ? new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                      }).format(v.current_value)
+                    : "—"],
+                  ["Status", v.condition_status || "—"],
+                ];
 
-                <tbody>
-                  {vehicles.map((v) => (
-                    <tr key={v.id}>
-                      <td style={cellStyle}>
-                        <Link
-                          href={`/vehicles/${v.id}`}
-                          style={{
-                            color: "#175cd3",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {v.name}
-                        </Link>
-                      </td>
-                      <td style={cellStyle}>{v.vehicle_type || "—"}</td>
-                      <td style={cellStyle}>{v.make || "—"}</td>
-                      <td style={cellStyle}>{v.model || "—"}</td>
-                      <td style={cellStyle}>{v.year ?? "—"}</td>
-                      <td style={cellStyle}>{v.vin || "—"}</td>
-                      <td style={cellStyle}>
-                        {v.current_value != null
-                          ? new Intl.NumberFormat("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                            }).format(v.current_value)
-                          : "—"}
-                      </td>
-                      <td style={cellStyle}>{v.condition_status || "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                const status = v.retired
+                  ? {
+                      label: "Retired",
+                      color: "#b42318",
+                      background: "#fef3f2",
+                      border: "#fecdca",
+                    }
+                  : {
+                      label: "Active",
+                      color: "#067647",
+                      background: "#ecfdf3",
+                      border: "#abefc6",
+                    };
+
+                return (
+                  <EntityCard
+                    key={v.id}
+                    href={`/vehicles/${v.id}`}
+                    title={v.name}
+                    subtitle={`${v.make || ""} ${v.model || ""}`.trim() || "No details"}
+                    status={status}
+                    details={details}
+                  />
+                );
+              })}
             </div>
           )}
         </section>
@@ -235,20 +239,4 @@ const createButtonStyle = {
   background: "#175cd3",
   color: "#fff",
   fontWeight: 700,
-};
-
-const headerCellStyle = {
-  textAlign: "left",
-  padding: "0.7rem",
-  borderBottom: "2px solid #d0d5dd",
-  color: "#475467",
-  fontSize: "0.85rem",
-};
-
-const cellStyle = {
-  padding: "0.7rem",
-  borderBottom: "1px solid #eaecf0",
-  color: "#344054",
-  verticalAlign: "top",
-  fontSize: "0.9rem",
 };
