@@ -1,44 +1,36 @@
 import Link from "next/link";
 
+const navigation = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/vehicles", label: "Vehicles" },
+  { href: "/tools", label: "Tools" },
+  { href: "/parts", label: "Parts" },
+  { href: "/loans", label: "Loans" },
+  { href: "/borrowers", label: "Borrowers" },
+  { href: "/backups", label: "Backups" },
+];
+
 export function Navbar() {
-  const navStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-    padding: "0.75rem 1.25rem",
-    borderBottom: "1px solid #ddd",
-    background: "#fafafa",
-    fontFamily: "system-ui, sans-serif",
-    flexWrap: "wrap",
-  };
-
-  const linkStyle = {
-    color: "#555",
-    textDecoration: "none",
-    fontSize: "0.95rem",
-  };
-
   return (
-    <nav style={navStyle}>
-      <Link
-        href="/dashboard"
-        style={{
-          ...linkStyle,
-          color: "#111",
-          fontWeight: 700,
-          marginRight: "0.25rem",
-        }}
-      >
-        Filter Trail
+    <aside className="sidebar" aria-label="Main navigation">
+      <Link href="/dashboard" className="sidebar-brand">
+        <span className="sidebar-brand-name">Filter Trail</span>
+        <span className="sidebar-brand-subtitle">
+          Equipment and inventory tracker
+        </span>
       </Link>
 
-      <Link href="/dashboard" style={linkStyle}>Dashboard</Link>
-      <Link href="/vehicles" style={linkStyle}>Vehicles</Link>
-      <Link href="/tools" style={linkStyle}>Tools</Link>
-      <Link href="/parts" style={linkStyle}>Parts</Link>
-      <Link href="/loans" style={linkStyle}>Loans</Link>
-      <Link href="/borrowers" style={linkStyle}>Borrowers</Link>
-      <Link href="/backups" style={linkStyle}>Backups</Link>
-    </nav>
+      <div className="sidebar-section-label">Workspace</div>
+
+      <nav className="sidebar-nav">
+        {navigation.map((item) => (
+          <Link key={item.href} href={item.href} className="sidebar-link">
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="sidebar-footer">Local development</div>
+    </aside>
   );
 }

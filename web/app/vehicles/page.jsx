@@ -1,5 +1,9 @@
 import Link from "next/link";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { Navbar } from "../../components/Navbar";
+
 
 const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
 

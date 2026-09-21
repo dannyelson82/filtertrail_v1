@@ -54,8 +54,9 @@ export default async function EditToolPage({ params }) {
   }
 
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
+      <div className="app-content">
 
       <main
         style={{

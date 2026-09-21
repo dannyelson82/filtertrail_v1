@@ -21,8 +21,9 @@ const labelStyle = {
 
 export default function NewToolPage() {
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
+      <div className="app-content">
 
       <main
         style={{

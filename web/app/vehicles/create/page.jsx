@@ -94,8 +94,9 @@ export default function CreateVehiclePage() {
   }
 
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
+      <div className="app-content">
 
       <main
         style={{
@@ -319,6 +320,7 @@ export default function CreateVehiclePage() {
           </div>
         </form>
       </main>
+      </div>
     </div>
   );
 }

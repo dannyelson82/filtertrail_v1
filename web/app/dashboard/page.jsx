@@ -1,75 +1,123 @@
-import { Navbar } from "../../components/Navbar";
 import Link from "next/link";
+import { Navbar } from "../../components/Navbar";
 
-const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
+const API_BASE =
+  process.env.API_BASE_URL || "http://192.168.50.37:8001";
 
-async function getCounts() {
-  const base = API_BASE;
+async function fetchJson(path) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    cache: "no-store",
+  });
 
-  async function safeCount(path) {
-    try {
-      const res = await fetch(`${base}${path}`, { cache: "no-store" });
-      if (!res.ok) return 0;
-      const data = await res.json();
-      return Array.isArray(data) ? data.length : 0;
-    } catch {
-      return 0;
-    }
+  if (!response.ok) {
+    throw new Error(`Could not load ${path}`);
   }
 
-  const [vehicles, tools, parts, loans] = await Promise.all([
-    safeCount("/api/vehicles/"),
-    safeCount("/api/tools/"),
-    safeCount("/api/parts/"),
-    safeCount("/api/loans/"),
-  ]);
-
-  return { vehicles, tools, parts, loans };
+  return response.json();
 }
 
 export default async function DashboardPage() {
-  const { vehicles, tools, parts, loans } = await getCounts();
+  const [vehicles, tools, parts, loans] = await Promise.all([
+    fetchJson("/api/vehicles/"),
+    fetchJson("/api/tools/"),
+    fetchJson("/api/parts/"),
+    fetchJson("/api/loans/"),
+  ]);
 
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
-      <main style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif" }}>
-        <h1>Dashboard</h1>
+      <div className="app-content">
+        <main className="page-content">
+          <h1 style={{ color: "#0B1F33" }}>Dashboard</h1>
 
-        <section style={{ marginTop: "1.5rem" }}>
-          <h2>Quick stats</h2>
+          <p style={{ color: "#607486" }}>
+            Overview of your equipment and inventory.
+          </p>
+
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(220px, 1fr))",
               gap: "1rem",
+              marginTop: "1.5rem",
             }}
           >
-            <StatCard title="Vehicles" value={vehicles} href="/vehicles" />
-            <StatCard title="Tools" value={tools} href="/tools" />
-            <StatCard title="Parts" value={parts} href="/parts" />
-            <StatCard title="Loans" value={loans} href="/loans" />
+            <DashboardCard
+              title="Vehicles"
+              value={vehicles.length}
+              href="/vehicles"
+              color="#248BDB"
+            />
+
+            <DashboardCard
+              title="Tools"
+              value={tools.length}
+              href="/tools"
+              color="#F28C28"
+            />
+
+            <DashboardCard
+              title="Parts"
+              value={parts.length}
+              href="/parts"
+              color="#35A66F"
+            />
+
+            <DashboardCard
+              title="Loans"
+              value={loans.length}
+              href="/loans"
+              color="#0B1F33"
+            />
           </div>
-        </section>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
 
-function StatCard({ title, value, href }) {
+function DashboardCard({ title, value, href, color }) {
   return (
-    <a href={href} style={{ textDecoration: "none", color: "inherit" }}>
+    <Link href={href} style={{ textDecoration: "none" }}>
       <div
+        className="card"
         style={{
-          border: "1px solid #ddd",
-          borderRadius: 6,
-          padding: "1rem",
-          background: "#fff",
+          padding: "1.25rem",
+          borderTop: `4px solid ${color}`,
         }}
       >
-        <div style={{ color: "#666", fontSize: "0.9rem" }}>{title}</div>
-        <div style={{ fontSize: "1.5rem", fontWeight: 700, marginTop: "0.25rem" }}>{value}</div>
+        <div
+          style={{
+            color: "#607486",
+            fontWeight: 700,
+          }}
+        >
+          {title}
+        </div>
+
+        <div
+          style={{
+            marginTop: "0.5rem",
+            color: "#0B1F33",
+            fontSize: "2rem",
+            fontWeight: 800,
+          }}
+        >
+          {value}
+        </div>
+
+        <div
+          style={{
+            marginTop: "0.5rem",
+            color,
+            fontWeight: 700,
+          }}
+        >
+          View {title.toLowerCase()} →
+        </div>
       </div>
-    </a>
+    </Link>
   );
 }

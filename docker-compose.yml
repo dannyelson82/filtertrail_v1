@@ -39,6 +39,7 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
     volumes:
+      - ./api:/app
       - /mnt/user/appdata/filtertrail/uploads:/app/uploads
       - /mnt/user/appdata/filtertrail/backups:/backups/filtertrail
       - /mnt/user/appdata/filtertrail/backup/config:/backup/config:ro
@@ -49,7 +50,7 @@ services:
       filtertrail-backup-worker:
         condition: service_started
     ports:
-    - "8001:8000"
+      - "8001:8000"
 
   filtertrail-web:
     build:
@@ -66,6 +67,7 @@ services:
       AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET}
       API_BASE_URL: http://192.168.50.37:8001
     volumes:
+      - ./web:/app
       - /mnt/user/appdata/filtertrail/uploads:/app/public/uploads
     depends_on:
       filtertrail-init:

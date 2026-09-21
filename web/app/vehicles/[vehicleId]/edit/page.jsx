@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { Navbar } from "../../../../components/Navbar";
+import { useParams, useRouter } from "next/navigation";
 
 const fieldStyle = {
   width: "100%",
@@ -20,469 +20,451 @@ const labelStyle = {
   color: "#344054",
 };
 
+const initialForm = {
+  name: "",
+  type: "",
+  vin: "",
+  make: "",
+  model: "",
+  year: "",
+  color: "",
+  license_plate: "",
+  purchase_date: "",
+  purchase_price: "",
+  current_value: "",
+  notes: "",
+};
+
+function stringValue(value) {
+  return value === null || value === undefined ? "" : String(value);
+}
+
 export default function EditVehiclePage() {
-  const router = useRouter();
   const params = useParams();
-  const vehicleId = Number(params.vehicleId);
+  const router = useRouter();
+  const vehicleId = params?.vehicleId;
 
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    make: "",
-    model: "",
-    year: "",
-    vin: "",
-    color: "",
-    license_plate: "",
-    purchase_date: "",
-    purchase_price: "",
-    current_value: "",
-    estimated_resale_value: "",
-    insurance_value: "",
-    location: "",
-    condition_status: "good",
-    notes: "",
-  });
-
+  const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!Number.isInteger(vehicleId) || vehicleId < 1) {
-      setError("Invalid vehicle ID.");
-      setLoading(false);
-      return;
-    }
+    if (!vehicleId) return;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    let cancelled = false;
 
-    (async () => {
+    async function loadVehicle() {
       try {
-        const url = `/api/vehicles/${vehicleId}`;
-        console.log("Fetching vehicle from", url);
+        setLoading(true);
+        setError("");
 
-        const response = await fetch(url, {
-          signal: controller.signal,
+        const response = await fetch(`/api/vehicles/${vehicleId}`, {
           cache: "no-store",
         });
 
-        clearTimeout(timeoutId);
-        console.log("Vehicle response status", response.status);
+        const body = await response.json().catch(() => null);
 
         if (!response.ok) {
-          const text = await response.text();
-          console.error("Vehicle error body", text);
-          throw new Error(`API error: ${response.status} - ${text}`);
+          throw new Error(
+            body?.detail || body?.error || "Could not load vehicle."
+          );
         }
 
-        const v = await response.json();
-        console.log("Vehicle loaded", v);
-
-        setFormData({
-          name: v.name || "",
-          type: v.type || "",
-          make: v.make || "",
-          model: v.model || "",
-          year: v.year ?? "",
-          vin: v.vin || "",
-          color: v.color || "",
-          license_plate: v.license_plate || "",
-          purchase_date: v.purchase_date || "",
-          purchase_price: v.purchase_price ?? "",
-          current_value: v.current_value ?? "",
-          estimated_resale_value: v.estimated_resale_value ?? "",
-          insurance_value: v.insurance_value ?? "",
-          location: v.location || "",
-          condition_status: v.condition_status || "good",
-          notes: v.notes || "",
-        });
-      } catch (err) {
-        console.error("Failed to load vehicle", err);
-        if (err.name === "AbortError") {
-          setError("Request timed out after 8 seconds. Check server logs.");
-        } else {
-          setError(err.message || "Could not load vehicle.");
+        if (!cancelled) {
+          setForm({
+            name: stringValue(body.name),
+            type: stringValue(body.type),
+            vin: stringValue(body.vin),
+            make: stringValue(body.make),
+            model: stringValue(body.model),
+            year: stringValue(body.year),
+            color: stringValue(body.color),
+            license_plate: stringValue(body.license_plate),
+            purchase_date: stringValue(body.purchase_date),
+            purchase_price: stringValue(body.purchase_price),
+            current_value: stringValue(body.current_value),
+            notes: stringValue(body.notes),
+          });
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setError(requestError.message || "Could not load vehicle.");
         }
       } finally {
-        clearTimeout(timeoutId);
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    })();
+    }
+
+    loadVehicle();
 
     return () => {
-      clearTimeout(timeoutId);
-      controller.abort();
+      cancelled = true;
     };
   }, [vehicleId]);
 
-  function handleChange(event) {
+  function updateField(event) {
     const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
   }
 
-  async function handleSubmit(event) {
+  async function submitForm(event) {
     event.preventDefault();
+
+    if (saving) return;
+
+    setSaving(true);
     setError("");
 
     const payload = {
-      name: formData.name.trim(),
-      type: formData.type.trim() || null,
-      make: formData.make.trim() || null,
-      model: formData.model.trim() || null,
-      year: formData.year ? Number(formData.year) : null,
-      vin: formData.vin.trim() || null,
-      color: formData.color.trim() || null,
-      license_plate: formData.license_plate.trim() || null,
-      purchase_date: formData.purchase_date || null,
-      purchase_price: formData.purchase_price ? Number(formData.purchase_price) : null,
-      current_value: formData.current_value ? Number(formData.current_value) : null,
-      estimated_resale_value: formData.estimated_resale_value
-        ? Number(formData.estimated_resale_value)
+      name: form.name.trim(),
+      type: form.type.trim(),
+      vin: form.vin.trim() || null,
+      make: form.make.trim() || null,
+      model: form.model.trim() || null,
+      year: form.year ? Number(form.year) : null,
+      color: form.color.trim() || null,
+      license_plate: form.license_plate.trim() || null,
+      purchase_date: form.purchase_date || null,
+      purchase_price: form.purchase_price
+        ? Number(form.purchase_price)
         : null,
-      insurance_value: formData.insurance_value ? Number(formData.insurance_value) : null,
-      location: formData.location.trim() || null,
-      condition_status: formData.condition_status || "good",
-      notes: formData.notes.trim() || null,
+      current_value: form.current_value
+        ? Number(form.current_value)
+        : null,
+      notes: form.notes.trim() || null,
     };
 
-    if (!payload.name) {
-      setError("Name is required.");
+    if (!payload.name || !payload.type) {
+      setError("Name and type are required.");
+      setSaving(false);
       return;
     }
 
     try {
       const response = await fetch(`/api/vehicles/${vehicleId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
+      const body = await response.json().catch(() => null);
+
       if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`API error: ${response.status} - ${text}`);
+        throw new Error(
+          body?.detail || body?.error || "Could not update vehicle."
+        );
       }
 
       router.push(`/vehicles/${vehicleId}`);
-    } catch (err) {
-      setError(err.message || "Could not update vehicle.");
+      router.refresh();
+    } catch (requestError) {
+      setError(requestError.message || "Could not update vehicle.");
+      setSaving(false);
     }
   }
 
   if (loading) {
     return (
-      <div>
-        <Navbar />
-        <main style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif" }}>
-          Loading vehicle...
-        </main>
-      </div>
+      <main
+        style={{
+          padding: "1.5rem",
+          fontFamily: "system-ui, sans-serif",
+          maxWidth: 680,
+          margin: "0 auto",
+        }}
+      >
+        <h1 style={{ color: "#101828" }}>Edit Vehicle</h1>
+        <p style={{ color: "#667085" }}>Loading vehicle...</p>
+      </main>
     );
   }
 
-  if (error) {
-    return (
-      <div>
-        <Navbar />
-        <main
-          style={{
-            padding: "1.5rem",
-            fontFamily: "system-ui, sans-serif",
-            maxWidth: 720,
-            margin: "0 auto",
-          }}
-        >
-          <h1 style={{ color: "#101828", margin: 0 }}>Edit Vehicle</h1>
+  return (
+    <main
+      style={{
+        padding: "1.5rem",
+        fontFamily: "system-ui, sans-serif",
+        maxWidth: 680,
+        margin: "0 auto",
+      }}
+    >
+      <Link
+        href={`/vehicles/${vehicleId}`}
+        style={{
+          display: "inline-block",
+          marginBottom: "1rem",
+          color: "#175cd3",
+          textDecoration: "none",
+          fontWeight: 600,
+        }}
+      >
+        ← Go Back
+      </Link>
 
+      <section
+        style={{
+          border: "1px solid #d0d5dd",
+          borderRadius: 10,
+          background: "#fff",
+          padding: "1.25rem",
+        }}
+      >
+        <h1 style={{ margin: 0, color: "#101828" }}>Edit Vehicle</h1>
+
+        {error ? (
           <div
+            role="alert"
             style={{
               marginTop: "1rem",
               padding: "0.75rem",
+              border: "1px solid #fecdca",
               borderRadius: 6,
               background: "#fef3f2",
-              border: "1px solid #fecdca",
               color: "#b42318",
             }}
           >
             {error}
           </div>
+        ) : null}
 
-          <button
-            type="button"
-            onClick={() => router.back()}
-            style={{
-              marginTop: "1rem",
-              padding: "0.6rem 1rem",
-              cursor: "pointer",
-              border: "1px solid #98a2b3",
-              borderRadius: 6,
-              background: "#fff",
-              color: "#344054",
-              fontWeight: 600,
-            }}
-          >
-            Go Back
-          </button>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <Navbar />
-
-      <main
-        style={{
-          padding: "1.5rem",
-          fontFamily: "system-ui, sans-serif",
-          maxWidth: 720,
-          margin: "0 auto",
-        }}
-      >
-        <h1 style={{ color: "#101828", margin: 0 }}>Edit Vehicle</h1>
-
-        <p style={{ color: "#667085", marginTop: "0.45rem" }}>
-          Update vehicle details, including pricing.
-        </p>
-
-        <form onSubmit={handleSubmit} style={{ marginTop: "1.25rem" }}>
-          {error ? (
-            <div
-              style={{
-                marginBottom: "1rem",
-                padding: "0.75rem",
-                borderRadius: 6,
-                background: "#fef3f2",
-                border: "1px solid #fecdca",
-                color: "#b42318",
-              }}
-            >
-              {error}
-            </div>
-          ) : null}
-
+        <form onSubmit={submitForm} style={{ marginTop: "1.25rem" }}>
           <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Name</label>
+            <label htmlFor="name" style={labelStyle}>
+              Name
+            </label>
             <input
+              id="name"
               name="name"
-              value={formData.name}
-              onChange={handleChange}
+              value={form.name}
+              onChange={updateField}
               required
               style={fieldStyle}
             />
           </div>
 
           <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Type</label>
+            <label htmlFor="type" style={labelStyle}>
+              Type
+            </label>
             <input
+              id="type"
               name="type"
-              value={formData.type}
-              onChange={handleChange}
+              value={form.type}
+              onChange={updateField}
+              required
               style={fieldStyle}
             />
           </div>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Make</label>
-            <input
-              name="make"
-              value={formData.make}
-              onChange={handleChange}
-              style={fieldStyle}
-            />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "1rem",
+            }}
+          >
+            <div>
+              <label htmlFor="make" style={labelStyle}>
+                Make
+              </label>
+              <input
+                id="make"
+                name="make"
+                value={form.make}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="model" style={labelStyle}>
+                Model
+              </label>
+              <input
+                id="model"
+                name="model"
+                value={form.model}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="year" style={labelStyle}>
+                Year
+              </label>
+              <input
+                id="year"
+                name="year"
+                type="number"
+                value={form.year}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="color" style={labelStyle}>
+                Color
+              </label>
+              <input
+                id="color"
+                name="color"
+                value={form.color}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="license_plate" style={labelStyle}>
+                License Plate
+              </label>
+              <input
+                id="license_plate"
+                name="license_plate"
+                value={form.license_plate}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="vin" style={labelStyle}>
+                VIN
+              </label>
+              <input
+                id="vin"
+                name="vin"
+                value={form.vin}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
           </div>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Model</label>
-            <input
-              name="model"
-              value={formData.model}
-              onChange={handleChange}
-              style={fieldStyle}
-            />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "1rem",
+              marginTop: "1rem",
+            }}
+          >
+            <div>
+              <label htmlFor="purchase_date" style={labelStyle}>
+                Purchase Date
+              </label>
+              <input
+                id="purchase_date"
+                name="purchase_date"
+                type="date"
+                value={form.purchase_date}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="purchase_price" style={labelStyle}>
+                Purchase Price
+              </label>
+              <input
+                id="purchase_price"
+                name="purchase_price"
+                type="number"
+                step="0.01"
+                value={form.purchase_price}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="current_value" style={labelStyle}>
+                Current Value
+              </label>
+              <input
+                id="current_value"
+                name="current_value"
+                type="number"
+                step="0.01"
+                value={form.current_value}
+                onChange={updateField}
+                style={fieldStyle}
+              />
+            </div>
           </div>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Year</label>
-            <input
-              name="year"
-              value={formData.year}
-              onChange={handleChange}
-              type="number"
-              min="1900"
-              max="2100"
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>VIN</label>
-            <input
-              name="vin"
-              value={formData.vin}
-              onChange={handleChange}
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Color</label>
-            <input
-              name="color"
-              value={formData.color}
-              onChange={handleChange}
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>License Plate</label>
-            <input
-              name="license_plate"
-              value={formData.license_plate}
-              onChange={handleChange}
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Purchase Date</label>
-            <input
-              name="purchase_date"
-              value={formData.purchase_date}
-              onChange={handleChange}
-              type="date"
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Purchase Price</label>
-            <input
-              name="purchase_price"
-              value={formData.purchase_price}
-              onChange={handleChange}
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Current Value</label>
-            <input
-              name="current_value"
-              value={formData.current_value}
-              onChange={handleChange}
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Estimated Resale Value</label>
-            <input
-              name="estimated_resale_value"
-              value={formData.estimated_resale_value}
-              onChange={handleChange}
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Insurance Value</label>
-            <input
-              name="insurance_value"
-              value={formData.insurance_value}
-              onChange={handleChange}
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Storage Location</label>
-            <input
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              style={fieldStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Condition</label>
-            <select
-              name="condition_status"
-              value={formData.condition_status}
-              onChange={handleChange}
-              style={fieldStyle}
-            >
-              <option value="excellent">Excellent</option>
-              <option value="good">Good</option>
-              <option value="fair">Fair</option>
-              <option value="poor">Poor</option>
-            </select>
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Notes</label>
+          <div style={{ marginTop: "1rem" }}>
+            <label htmlFor="notes" style={labelStyle}>
+              Notes
+            </label>
             <textarea
+              id="notes"
               name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows="4"
+              rows="5"
+              value={form.notes}
+              onChange={updateField}
               style={fieldStyle}
             />
           </div>
 
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              flexWrap: "wrap",
+              marginTop: "1.25rem",
+            }}
+          >
             <button
               type="submit"
+              disabled={saving}
               style={{
                 padding: "0.6rem 1rem",
-                cursor: "pointer",
+                cursor: saving ? "wait" : "pointer",
                 border: "1px solid #175cd3",
                 borderRadius: 6,
-                background: "#175cd3",
+                background: saving ? "#98a2b3" : "#175cd3",
                 color: "#fff",
                 fontWeight: 700,
               }}
             >
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </button>
 
-            <button
-              type="button"
-              onClick={() => router.back()}
-              style={{
-                padding: "0.6rem 1rem",
-                cursor: "pointer",
-                border: "1px solid #98a2b3",
-                borderRadius: 6,
-                background: "#fff",
-                color: "#344054",
-                fontWeight: 600,
-              }}
+            <Link
+              href={`/vehicles/${vehicleId}`}
+              style={{ textDecoration: "none" }}
             >
-              Cancel
-            </button>
+              <button
+                type="button"
+                style={{
+                  padding: "0.6rem 1rem",
+                  cursor: "pointer",
+                  border: "1px solid #98a2b3",
+                  borderRadius: 6,
+                  background: "#fff",
+                  color: "#344054",
+                  fontWeight: 600,
+                }}
+              >
+                Cancel
+              </button>
+            </Link>
           </div>
         </form>
-      </main>
-    </div>
+      </section>
+    </main>
   );
 }

@@ -21,8 +21,9 @@ const labelStyle = {
 
 export default function NewPartPage() {
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
+      <div className="app-content">
       <main style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif", maxWidth: 720 }}>
         <h1>Add Part</h1>
         <p style={{ color: "#555" }}>

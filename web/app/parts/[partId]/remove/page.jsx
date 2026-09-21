@@ -44,8 +44,9 @@ export default async function RemovePartPage({ params }) {
   }
 
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
+      <div className="app-content">
 
       <main
         style={{

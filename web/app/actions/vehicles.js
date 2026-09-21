@@ -19,5 +19,25 @@ export async function createVehicle(formData) {
     body: JSON.stringify(payload),
   });
 
-  redirect("/dashboard");
+  redirect("/vehicles");
+}
+
+export async function retireVehicle(vehicleId) {
+  const id = Number(vehicleId);
+  if (!id || id < 1) {
+    throw new Error("Invalid vehicle ID");
+  }
+
+  const response = await fetch(`${API_BASE}/api/vehicles/${id}/retire`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ retired: true }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to retire vehicle: ${response.status} ${text}`);
+  }
+
+  redirect("/vehicles");
 }

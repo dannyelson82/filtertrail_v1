@@ -47,7 +47,17 @@ export default async function LoansPage() {
     <div>
       <Navbar />
 
-      <main style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif" }}>
+      <main
+        style={{
+          marginLeft: "245px",
+          width: "calc(100% - 245px)",
+          minHeight: "100vh",
+          boxSizing: "border-box",
+          padding: "1.5rem",
+          fontFamily: "system-ui, sans-serif",
+          overflowX: "hidden",
+        }}
+      >
         <div
           style={{
             display: "flex",
@@ -86,7 +96,7 @@ function ActiveLoansSection({ loans, toolNames }) {
       {loans.length === 0 ? (
         <p>No active loans.</p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div style={{ width: "100%", overflowX: "auto", overflowY: "visible" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
             <thead>
               <tr>
@@ -145,7 +155,7 @@ function ReturnedLoansSection({ loans, toolNames }) {
       {loans.length === 0 ? (
         <p>No returned loans.</p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div style={{ width: "100%", overflowX: "auto", overflowY: "visible" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1450 }}>
             <thead>
               <tr>
