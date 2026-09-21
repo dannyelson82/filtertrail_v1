@@ -1,3 +1,21 @@
+## [0.1.1] - 2026-09-21
+
+### Added
+- Part inventory fields: `quantity_on_hand`, `unit`, `cost_per_unit`, `min_stock_level`, `supplier`
+- Auto-calculated `current_value` for parts (quantity × cost)
+- Low-stock visual indicator logic (quantity ≤ min_stock_level)
+
+### Fixed
+- Parts form data not persisting inventory fields to API and database
+- Parts detail page not displaying inventory metadata
+- Sidebar layout and alignment issues across pages
+- Vehicle dashboard refresh and navigation behavior
+- Tool creation page form and validation issues
+
+### Changed
+- Parts dashboard and detail pages now use `quantity_on_hand` as canonical inventory count
+- UI fallback: `part.quantity ?? part.quantity_on_hand ?? 0` to avoid breaking existing data
+
 # Changelog
 
 All notable changes to the FilterTrail project are documented here.
