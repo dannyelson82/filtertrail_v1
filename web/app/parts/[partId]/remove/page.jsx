@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Navbar } from "../../../../components/Navbar";
 import { retirePart } from "../../../actions/retirePart";
 
-const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8001";
 
 async function getPart(partId) {
   const response = await fetch(`${API_BASE}/api/parts/${partId}`, {

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8001";
 
 export async function completeToolReturn(formData) {
   const loanId = Number(formData.get("loan_id"));

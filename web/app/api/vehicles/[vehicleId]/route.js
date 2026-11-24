@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8001";
 
 export async function GET(request, { params }) {
   const { vehicleId } = params;

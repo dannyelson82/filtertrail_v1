@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Navbar } from "../../components/Navbar";
 import { EntityCard } from "../../components/EntityCard";
 
-const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8001";
 
 async function getBorrowers() {
   const response = await fetch(`${API_BASE}/api/borrowers/`, {
