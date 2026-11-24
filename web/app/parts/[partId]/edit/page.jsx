@@ -6,7 +6,7 @@ import { updatePart } from "../../../actions/parts";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8001";
 
 const fieldStyle = {
   width: "100%",

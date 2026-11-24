@@ -12,7 +12,7 @@ def run_backup():
 
     # Parse MySQL URL: mysql://user:pass@host:port/dbname
     # Simple parsing; adjust if you use more complex URLs
-    # mysql://filtertrail:PASSWORD@192.168.50.37:3306/filtertrail
+    # mysql://filtertrail:PASSWORD@localhost:3306/filtertrail
     from urllib.parse import urlparse, unquote
 
     parsed = urlparse(db_url)

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.50.37:8001";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
 
 export async function retireVehicle(formData) {
   const vehicleId = String(formData.get("vehicle_id") || "").trim();

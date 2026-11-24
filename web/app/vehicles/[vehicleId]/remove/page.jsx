@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { retireVehicle } from "../../../actions/retireVehicle";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.50.37:8001";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
 
 async function getVehicle(vehicleId) {
   const response = await fetch(`${API_BASE}/api/vehicles/${vehicleId}`, {

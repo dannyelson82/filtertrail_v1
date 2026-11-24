@@ -65,7 +65,9 @@ services:
       AUTHENTIK_ISSUER: ${AUTHENTIK_ISSUER}
       AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID}
       AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET}
-      API_BASE_URL: http://192.168.50.37:8001
+      # The API container, by its service name on the compose network.
+      API_BASE_URL: http://filtertrail-api:8000
+      NEXT_PUBLIC_API_BASE_URL: http://filtertrail-api:8000
     volumes:
       - ./web:/app
       - /mnt/user/appdata/filtertrail/uploads:/app/public/uploads

@@ -5,7 +5,7 @@ import { EntityCard } from "../../components/EntityCard";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const API_BASE = process.env.API_BASE_URL || "http://192.168.50.37:8001";
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8001";
 
 async function fetchJson(path) {
   const response = await fetch(`${API_BASE}${path}`, {
