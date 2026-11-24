@@ -47,3 +47,6 @@ htmlcov/
 # Misc
 *.bak
 *.tmp
+
+# Local notes about a specific setup (never commit)
+LOCAL_NOTES.md
