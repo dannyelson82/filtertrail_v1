@@ -17,6 +17,10 @@ replaced by the newer `filtertrail` repository. This repository is public.
   addresses, domains, hostnames, container names, people's names). Use
   `example.com`, `localhost` and RFC 5737 addresses (`192.0.2.x`) instead.
   Setup notes go in the gitignored `LOCAL_NOTES.md`.
+- CI's **Privacy check** (`.github/scripts/privacy-check.py`) fails when new
+  commits add real private or Tailscale addresses or real `*.ts.net` names,
+  or use a computer's local address as commit email (it must be the GitHub
+  noreply address). Genuine example addresses go in `.privacy-allow`.
 - No sudo, no Docker socket.
 - The owner is comfortable following steps but is not a command-line expert:
   when they must do something themselves, give exact numbered steps.
